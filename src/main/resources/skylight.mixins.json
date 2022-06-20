@@ -6,7 +6,16 @@
   "mixins": [
   ],
   "client": [
-    "ExampleMixin"
+    "ExampleMixin",
+    "GameRendererAccessor",
+    "MinecraftClientMixin",
+    "MixinBlockEntityRenderDispatcher",
+    "MixinDebugRenderer",
+    "MixinEntityRenderDispatcher",
+    "MixinGameRenderer",
+    "MixinGameRenderer_Shaders",
+    "MixinWorldRenderer",
+    "MixinParticleManager"
   ],
   "injectors": {
     "defaultRequire": 1

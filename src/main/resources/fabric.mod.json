@@ -20,11 +20,15 @@
   "entrypoints": {
     "main": [
       "com.slimeist.skylight.SkylightMod"
+    ],
+    "client": [
+      "com.slimeist.skylight.SkylightModClient"
     ]
   },
   "mixins": [
     "skylight.mixins.json"
   ],
+  "accessWidener" : "skylight.accesswidener",
 
   "depends": {
     "fabricloader": ">=0.14.6",
