@@ -34,6 +34,7 @@ import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.Util;
 import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Matrix4f;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.dimension.DimensionType;
@@ -138,6 +139,8 @@ public class MyGameRenderer {
 
         ((IEWorldRenderer) worldRenderer).portal_setTransparencyShader(null);
 
+        //((IEWorldRenderer) worldRenderer).ip_setCloudsDirty(true);
+
         //invoke rendering
         try {
             invokeWrapper.accept(() -> {
@@ -208,7 +211,7 @@ public class MyGameRenderer {
 //        client.gameRenderer.getOverlayTexture().teardownOverlayColor();
     }
 
-/*    public static void resetFogState() {
+    public static void resetFogState() {
         Camera camera = client.gameRenderer.getCamera();
         float g = client.gameRenderer.getViewDistance();
 
@@ -220,25 +223,25 @@ public class MyGameRenderer {
         boolean bl2 = client.world.getDimensionEffects().useThickFog(MathHelper.floor(d), MathHelper.floor(e)) ||
                 client.inGameHud.getBossBarHud().shouldThickenFog();
 
-        FogRenderer.setupFog(camera, FogRenderer.FogMode.FOG_TERRAIN, Math.max(g - 16.0F, 32.0F), bl2);
-        FogRenderer.levelFogColor();
+        BackgroundRenderer.applyFog(camera, BackgroundRenderer.FogType.FOG_TERRAIN, Math.max(g - 16.0F, 32.0F), bl2);
+        BackgroundRenderer.setFogBlack();
     }
 
-    public static void updateFogColor() {
-        FogRenderer.setupColor(
-                client.gameRenderer.getMainCamera(),
-                RenderStates.tickDelta,
-                client.level,
-                client.options.renderDistance,
-                client.gameRenderer.getDarkenWorldAmount(RenderStates.tickDelta)
+    public static void updateFogColor(float tickDelta) {
+        BackgroundRenderer.render(
+                client.gameRenderer.getCamera(),
+                tickDelta,
+                client.world,
+                client.options.getViewDistance(),
+                client.gameRenderer.getSkyDarkness(tickDelta)
         );
     }
 
-    public static void resetDiffuseLighting(PoseStack matrixStack) {
-        if (client.level.effects().constantAmbientLight()) {
-            Lighting.setupNetherLevel(matrixStack.last().pose());
+    public static void resetDiffuseLighting(MatrixStack matrixStack) {
+        if (client.world.getDimensionEffects().shouldBrightenLighting()) {
+            DiffuseLighting.enableForLevel(matrixStack.peek().getPositionMatrix());
         } else {
-            Lighting.setupLevel(matrixStack.last().pose());
+            DiffuseLighting.disableForLevel(matrixStack.peek().getPositionMatrix());
         }
-    }*/
+    }
 }

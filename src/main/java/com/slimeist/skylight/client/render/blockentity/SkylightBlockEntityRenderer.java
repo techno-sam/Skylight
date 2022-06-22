@@ -29,6 +29,7 @@ import net.minecraft.resource.ResourceFactory;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.*;
+import net.minecraft.world.GameRules;
 import org.lwjgl.opengl.GL11;
 
 import java.io.IOException;
@@ -127,6 +128,9 @@ public class SkylightBlockEntityRenderer implements BlockEntityRenderer<Skylight
         MyGameRenderer.renderWorldNew(worldRenderInfo, Runnable::run);
     }
 
+    //private static long lastRenderedTime = -1;
+    private static float lastRenderedDelta = -1;
+
     @Override
     public void render(SkylightBlockEntity blockEntity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay) {
         if (isRenderingPortal()) {
@@ -137,33 +141,47 @@ public class SkylightBlockEntityRenderer implements BlockEntityRenderer<Skylight
         //Some vars
         MinecraftClient client = MinecraftClient.getInstance();
 
-        //Prepare framebuffer
-        secondaryFrameBuffer.prepare();
-        GlStateManager._enableDepthTest();
-        Framebuffer oldFrameBuffer = client.getFramebuffer();
-        ((IEMinecraftClient) client).setFrameBuffer(secondaryFrameBuffer.fb);
-        secondaryFrameBuffer.fb.beginWrite(true);
+        if (lastRenderedDelta==-1 || lastRenderedDelta!=tickDelta) {//(lastRenderedTime==-1 || lastRenderedTime!=blockEntity.getWorld().getTime()) {
+            //lastRenderedTime = client.world.getTime();
+            lastRenderedDelta = tickDelta;
+            //Prepare framebuffer
+            secondaryFrameBuffer.prepare();
+//            GlStateManager._enableDepthTest();
+            Framebuffer oldFrameBuffer = client.getFramebuffer();
+            ((IEMinecraftClient) client).setFrameBuffer(secondaryFrameBuffer.fb);
+            secondaryFrameBuffer.fb.beginWrite(true);
 
-        GlStateManager._clearColor(1, 0, 1, 1);
-        GlStateManager._clearDepth(1);
-        GlStateManager._clear(
-                GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT,
-                MinecraftClient.IS_SYSTEM_MAC
-        );
-        GL11.glDisable(GL11.GL_STENCIL_TEST);
+            GlStateManager._clearColor(1, 0, 1, 1);
+            GlStateManager._clearDepth(1);
+            GlStateManager._clear(
+                    GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT,
+                    MinecraftClient.IS_SYSTEM_MAC
+            );
+            GL11.glDisable(GL11.GL_STENCIL_TEST);
 
-        //renderContent(blockEntity, tickDelta, matrices, vertexConsumers, light, overlay);
-        Vec3d myOriginPos = new Vec3d(blockEntity.getPos().getX(), blockEntity.getPos().getY(), blockEntity.getPos().getZ()).add(0, 2, 0);
-        //myPos = client.cameraEntity.getCameraPosVec(tickDelta);
-        Vec3d camPos = originalCamera.getPos();
-        Vec3d localPos = camPos.subtract(myOriginPos);
-        Vec3d myPos = localPos.add(myOriginPos.add(0, 1.5+0.125, 0));
-        invokeWorldRendering(new WorldRenderInfo(client.world, myPos, matrices.peek().getPositionMatrix(), false, null, 2));//client.options.getViewDistance()));
-        GlStateManager._enableDepthTest();
+            //renderContent(blockEntity, tickDelta, matrices, vertexConsumers, light, overlay);
+            Vec3d myOriginPos = new Vec3d(blockEntity.getPos().getX(), blockEntity.getPos().getY(), blockEntity.getPos().getZ()).add(0, 2, 0);
+            //myPos = client.cameraEntity.getCameraPosVec(tickDelta);
+            Vec3d camPos = originalCamera.getPos();
+            Vec3d localPos = camPos.subtract(myOriginPos);
+            Vec3d myPos = localPos.add(myOriginPos.add(0, 1.5 + 0.125, 0));
+            long oldTimeOfDay = client.world.getTimeOfDay();
+            boolean oldDO_DAYLIGHT_CYCLE = client.world.getGameRules().get(GameRules.DO_DAYLIGHT_CYCLE).get();
+            client.world.setTimeOfDay(12000L+oldTimeOfDay);
+            invokeWorldRendering(new WorldRenderInfo(client.world, myPos, matrices.peek().getPositionMatrix(), false, null, client.options.getViewDistance()));
+            client.world.setTimeOfDay(oldTimeOfDay);
+            client.world.getGameRules().get(GameRules.DO_DAYLIGHT_CYCLE).set(oldDO_DAYLIGHT_CYCLE, null);
 
-        //cleanup frame buffer
-        ((IEMinecraftClient) client).setFrameBuffer(oldFrameBuffer);
-        oldFrameBuffer.beginWrite(true);
+            MyGameRenderer.updateFogColor(tickDelta);
+            MyGameRenderer.resetFogState();
+            MyGameRenderer.resetDiffuseLighting(matrices);
+
+            GlStateManager._enableDepthTest();
+
+            //cleanup frame buffer
+            ((IEMinecraftClient) client).setFrameBuffer(oldFrameBuffer);
+            oldFrameBuffer.beginWrite(true);
+        }
 
         //Render second framebuffer into main framebuffer
         GlStateManager._colorMask(true, true, true, true);
@@ -199,7 +217,7 @@ public class SkylightBlockEntityRenderer implements BlockEntityRenderer<Skylight
         );*/
         MatrixStack skyMatrices = new MatrixStack();
         skyMatrices.push();
-        renderSides(blockEntity, skyMatrices.peek().getPositionMatrix(), bufferBuilder, new Vec3f(1.0f, 0.0f, 0.75f));
+        renderSides(blockEntity, skyMatrices.peek().getPositionMatrix(), bufferBuilder, Vec3d.ZERO);
         skyMatrices.pop();
         bufferBuilder.end();
         //BufferUploader._endInternal
@@ -229,7 +247,7 @@ public class SkylightBlockEntityRenderer implements BlockEntityRenderer<Skylight
     }
 
     //End portal rendering
-    private void renderSides(SkylightBlockEntity entity, Matrix4f matrix, VertexConsumer vertexConsumer, Vec3f fogColor) {
+    private void renderSides(SkylightBlockEntity entity, Matrix4f matrix, VertexConsumer vertexConsumer, Vec3d fogColor) {
         float bottom = this.getBottomYOffset();
         float top = this.getTopYOffset();
         this.renderSide(entity, matrix, vertexConsumer, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, Direction.SOUTH, fogColor);
@@ -240,11 +258,11 @@ public class SkylightBlockEntityRenderer implements BlockEntityRenderer<Skylight
         this.renderSide(entity, matrix, vertexConsumer, 0.0f, 1.0f, top, top, 1.0f, 1.0f, 0.0f, 0.0f, Direction.UP, fogColor);
     }
 
-    private void renderSide(SkylightBlockEntity entity, Matrix4f model, VertexConsumer vertices, float x1, float x2, float y1, float y2, float z1, float z2, float z3, float z4, Direction side, Vec3f fogColor) {
-        vertices.vertex(model, x1, y1, z1).color(fogColor.getX(), fogColor.getY(), fogColor.getZ(), 1.0f).next();
-        vertices.vertex(model, x2, y1, z2).color(fogColor.getX(), fogColor.getY(), fogColor.getZ(), 1.0f).next();
-        vertices.vertex(model, x2, y2, z3).color(fogColor.getX(), fogColor.getY(), fogColor.getZ(), 1.0f).next();
-        vertices.vertex(model, x1, y2, z4).color(fogColor.getX(), fogColor.getY(), fogColor.getZ(), 1.0f).next();
+    private void renderSide(SkylightBlockEntity entity, Matrix4f model, VertexConsumer vertices, float x1, float x2, float y1, float y2, float z1, float z2, float z3, float z4, Direction side, Vec3d fogColor) {
+        vertices.vertex(model, x1, y1, z1).color((int) fogColor.getX()*255, (int) fogColor.getY()*255, (int) fogColor.getZ()*255, 255).next();
+        vertices.vertex(model, x2, y1, z2).color((int) fogColor.getX()*255, (int) fogColor.getY()*255, (int) fogColor.getZ()*255, 255).next();
+        vertices.vertex(model, x2, y2, z3).color((int) fogColor.getX()*255, (int) fogColor.getY()*255, (int) fogColor.getZ()*255, 255).next();
+        vertices.vertex(model, x1, y2, z4).color((int) fogColor.getX()*255, (int) fogColor.getY()*255, (int) fogColor.getZ()*255, 255).next();
     }
 
     protected float getTopYOffset() {

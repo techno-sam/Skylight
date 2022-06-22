@@ -4,9 +4,9 @@
   "package": "com.slimeist.skylight.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "PistonBlockMixin"
   ],
   "client": [
-    "ExampleMixin",
     "GameRendererAccessor",
     "MinecraftClientMixin",
     "MixinBlockEntityRenderDispatcher",
@@ -14,8 +14,8 @@
     "MixinEntityRenderDispatcher",
     "MixinGameRenderer",
     "MixinGameRenderer_Shaders",
-    "MixinWorldRenderer",
-    "MixinParticleManager"
+    "MixinParticleManager",
+    "MixinWorldRenderer"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -1,9 +1,11 @@
 package com.slimeist.skylight;
 
 import com.slimeist.skylight.client.render.blockentity.SkylightBlockEntityRenderer;
+import com.slimeist.skylight.client.render.blockentity.item.SkylightBlockEntityDynamicItemRenderer;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.RenderLayer;
 
@@ -18,5 +20,6 @@ public class SkylightModClient implements ClientModInitializer {
         MinecraftClient.getInstance().execute(() -> {
             SkylightBlockEntityRenderer.init();
         });
+        //BuiltinItemRendererRegistry.INSTANCE.register(SKYLIGHT_BLOCK.asItem(), new SkylightBlockEntityDynamicItemRenderer());
     }
 }
