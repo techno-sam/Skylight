@@ -167,7 +167,7 @@ public class SkylightBlockEntityRenderer implements BlockEntityRenderer<Skylight
             Vec3d myPos = localPos.add(myOriginPos.add(0, 1.5 + 0.125, 0));
             long oldTimeOfDay = client.world.getTimeOfDay();
             boolean oldDO_DAYLIGHT_CYCLE = client.world.getGameRules().get(GameRules.DO_DAYLIGHT_CYCLE).get();
-            client.world.setTimeOfDay(12000L+oldTimeOfDay);
+            //client.world.setTimeOfDay(12000L+oldTimeOfDay);
             invokeWorldRendering(new WorldRenderInfo(client.world, myPos, matrices.peek().getPositionMatrix(), false, null, client.options.getViewDistance()));
             client.world.setTimeOfDay(oldTimeOfDay);
             client.world.getGameRules().get(GameRules.DO_DAYLIGHT_CYCLE).set(oldDO_DAYLIGHT_CYCLE, null);

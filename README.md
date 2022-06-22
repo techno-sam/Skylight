@@ -1,5 +1,7 @@
 # Skylight
 ## About
+Skylight adds a block to see the sky indoors!
+<br><img src="https://i.imgur.com/3JkXPz5.png" height=270>
 
 ## Dependencies
 * Fabric API
