@@ -30,13 +30,13 @@ public class SkylightMod implements ModInitializer {
 	public static final Block SKYLIGHT_BLOCK = new SkylightBlock(FabricBlockSettings.of(Material.METAL, MapColor.LIGHT_BLUE_GRAY)
 			.strength(0.3f)
 			.sounds(BlockSoundGroup.GLASS)
-			.nonOpaque()
+			//.nonOpaque()
 			.allowsSpawning(SkylightMod::never)
 			.solidBlock(SkylightMod::never)
 			.suffocates(SkylightMod::never)
 			.blockVision(SkylightMod::never)
-			.luminance(15)
-			.emissiveLighting(SkylightMod::always)
+			//.luminance(15)
+			//.emissiveLighting(SkylightMod::always)
 			.requiresTool()
 	);
 

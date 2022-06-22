@@ -27,4 +27,9 @@ public class SkylightBlock extends AbstractGlassBlock implements BlockEntityProv
     public PistonBehavior getPistonBehavior(BlockState state) {
         return PistonBehavior.NORMAL;
     }
+
+    @Override
+    public boolean hasSidedTransparency(BlockState state) {
+        return true;
+    }
 }
