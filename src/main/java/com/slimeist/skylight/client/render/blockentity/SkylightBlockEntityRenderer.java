@@ -9,26 +9,22 @@ import com.slimeist.skylight.client.render.sky.context_management.WorldRenderInf
 import com.slimeist.skylight.client.render.sky.ducks.IEMinecraftClient;
 import com.slimeist.skylight.client.render.sky.q_misc_util.SignalBiArged;
 import com.slimeist.skylight.common.block.entity.SkylightBlockEntity;
-import com.slimeist.skylight.mixin.GameRendererAccessor;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.block.entity.EndPortalBlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.Framebuffer;
-import net.minecraft.client.gl.ShaderEffect;
 import net.minecraft.client.gl.Uniform;
 import net.minecraft.client.render.*;
 import net.minecraft.client.render.block.entity.BlockEntityRenderer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactory;
-import net.minecraft.client.render.model.json.ModelTransformation;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.resource.Resource;
 import net.minecraft.resource.ResourceFactory;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.*;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Matrix4f;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.GameRules;
 import org.lwjgl.opengl.GL11;
 
@@ -37,10 +33,6 @@ import java.util.function.Consumer;
 
 @Environment(EnvType.CLIENT)
 public class SkylightBlockEntityRenderer implements BlockEntityRenderer<SkylightBlockEntity> {
-
-    private static ItemStack stack = new ItemStack(Items.JUKEBOX, 1);
-
-    private static boolean renderingPortal = false;
 
     public static boolean isRenderingPortal() {
         return secondaryFrameBuffer.fb != null && MinecraftClient.getInstance().getFramebuffer().fbo == secondaryFrameBuffer.fb.fbo;//renderingPortal;
@@ -84,24 +76,6 @@ public class SkylightBlockEntityRenderer implements BlockEntityRenderer<Skylight
         });
     }
 
-    protected void renderContent(SkylightBlockEntity blockEntity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay) {
-        //Render item
-        matrices.push();
-        // Calculate the current offset in the y value
-        double offset = Math.sin((blockEntity.getWorld().getTime() + tickDelta) / 8.0) / 4.0;
-        // Move the item
-        matrices.translate(0.5, 1.25 + offset, 0.5);
-
-        // Rotate the item
-        matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion((blockEntity.getWorld().getTime() + tickDelta) * 4));
-
-        int lightAbove = WorldRenderer.getLightmapCoordinates(blockEntity.getWorld(), blockEntity.getPos().up());
-        MinecraftClient client = MinecraftClient.getInstance();
-        client.getItemRenderer().renderItem(stack, ModelTransformation.Mode.GROUND, lightAbove, overlay, matrices, vertexConsumers, 0);
-
-        matrices.pop();
-    }
-
     public static class DrawFbInAreaShader extends Shader {
 
         public final Uniform uniformW;
@@ -137,7 +111,7 @@ public class SkylightBlockEntityRenderer implements BlockEntityRenderer<Skylight
             return;
         }
         matrices.push();
-        renderingPortal = true;
+        boolean renderingPortal = true;
         //Some vars
         MinecraftClient client = MinecraftClient.getInstance();
 
@@ -159,7 +133,6 @@ public class SkylightBlockEntityRenderer implements BlockEntityRenderer<Skylight
             );
             GL11.glDisable(GL11.GL_STENCIL_TEST);
 
-            //renderContent(blockEntity, tickDelta, matrices, vertexConsumers, light, overlay);
             Vec3d myOriginPos = new Vec3d(blockEntity.getPos().getX(), blockEntity.getPos().getY(), blockEntity.getPos().getZ()).add(0, 2, 0);
             //myPos = client.cameraEntity.getCameraPosVec(tickDelta);
             Vec3d camPos = originalCamera.getPos();
@@ -271,60 +244,5 @@ public class SkylightBlockEntityRenderer implements BlockEntityRenderer<Skylight
 
     protected float getBottomYOffset() {
         return 0;
-    }
-
-    protected RenderLayer getLayer() {
-        return RenderLayer.getEndPortal();
-    }
-
-    private void renderSkyBroken() {
-        /*if (false) {//sky rendering
-            GameRenderer gameRenderer = client.gameRenderer;
-            Shader currentShader = RenderSystem.getShader();
-            Camera camera = client.gameRenderer.getCamera();
-
-            MatrixStack skyMatrices = new MatrixStack();
-
-            //GameRenderer setup
-            double fov = ((GameRendererAccessor) gameRenderer).callGetFov(camera, tickDelta, true);
-            skyMatrices.peek().getPositionMatrix().multiply(gameRenderer.getBasicProjectionMatrix(fov));
-            ((GameRendererAccessor) gameRenderer).callBobViewWhenHurt(skyMatrices, tickDelta);
-            if (client.options.bobView) {
-                ((GameRendererAccessor) gameRenderer).callBobView(skyMatrices, tickDelta);
-            }
-            Matrix4f posMatrix = skyMatrices.peek().getPositionMatrix();
-            //posMatrix.multiply(matrices.peek().getPositionMatrix());
-            gameRenderer.loadProjectionMatrix(posMatrix);
-            skyMatrices.multiply(Vec3f.POSITIVE_X.getDegreesQuaternion(camera.getPitch()));
-            skyMatrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(camera.getYaw() + 180.0f));
-            Matrix3f normalMatrix = skyMatrices.peek().getNormalMatrix().copy();
-            if (normalMatrix.invert()) {
-                RenderSystem.setInverseViewRotationMatrix(normalMatrix);
-            }
-
-            //WorldRenderer
-
-            Vec3d vec3d = camera.getPos();
-            double d = vec3d.getX();
-            double e = vec3d.getY();
-            double f = vec3d.getZ();
-            //skyMatrices.scale(0.5f, 0.5f, 0.5f);
-            Matrix4f matrix4f = skyMatrices.peek().getPositionMatrix();
-
-            //Fog
-            BackgroundRenderer.render(camera, tickDelta, client.world, client.options.getViewDistance(), gameRenderer.getSkyDarkness(tickDelta));
-            BackgroundRenderer.setFogBlack();
-
-            //sky rendering
-            boolean thickFog = client.world.getDimensionEffects().useThickFog(MathHelper.floor(camera.getPos().getX()), MathHelper.floor(camera.getPos().getY())) || client.inGameHud.getBossBarHud().shouldThickenFog();
-            RenderSystem.setShader(GameRenderer::getPositionShader);
-            MinecraftClient.getInstance().worldRenderer.renderSky(skyMatrices, matrix4f, tickDelta, camera, thickFog, () -> BackgroundRenderer.applyFog(camera, BackgroundRenderer.FogType.FOG_SKY, client.gameRenderer.getViewDistance(), thickFog));
-            //fog
-            BackgroundRenderer.applyFog(camera, BackgroundRenderer.FogType.FOG_TERRAIN, Math.max(gameRenderer.getViewDistance(), 32.0f), thickFog);
-            //clouds
-            client.worldRenderer.renderClouds(skyMatrices, matrix4f, tickDelta, d, e, f);
-
-            RenderSystem.setShader(() -> currentShader);
-        }*/
     }
 }
