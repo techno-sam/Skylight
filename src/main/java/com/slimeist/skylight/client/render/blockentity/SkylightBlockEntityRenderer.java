@@ -146,7 +146,7 @@ public class SkylightBlockEntityRenderer implements BlockEntityRenderer<Skylight
             lastRenderedDelta = tickDelta;
             //Prepare framebuffer
             secondaryFrameBuffer.prepare();
-//            GlStateManager._enableDepthTest();
+            GlStateManager._enableDepthTest();
             Framebuffer oldFrameBuffer = client.getFramebuffer();
             ((IEMinecraftClient) client).setFrameBuffer(secondaryFrameBuffer.fb);
             secondaryFrameBuffer.fb.beginWrite(true);
@@ -174,7 +174,7 @@ public class SkylightBlockEntityRenderer implements BlockEntityRenderer<Skylight
 
             MyGameRenderer.updateFogColor(tickDelta);
             MyGameRenderer.resetFogState();
-            MyGameRenderer.resetDiffuseLighting(matrices);
+//            MyGameRenderer.resetDiffuseLighting(matrices); //Causes lighting issues
 
             GlStateManager._enableDepthTest();
 
