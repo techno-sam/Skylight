@@ -31,19 +31,17 @@ public abstract class MixinChunkSkyLightProvider extends ChunkLightProvider {
 
     @Inject(at=@At("HEAD"), method="getPropagatedLevel", cancellable = true)
     public void getPropagatedLevel(long sourceId, long targetId, int level, CallbackInfoReturnable<Integer> cir) {
-        if (false) {
-            ChunkSkyLightProvider this_ = (ChunkSkyLightProvider) (Object) this;
-            BlockState sourceState = this.getStateForLighting(sourceId, null);
-            MutableInt mutableInt = new MutableInt();
-            BlockState targetState = this.getStateForLighting(targetId, mutableInt);
-            if (sourceState.isOf(SkylightMod.SKYLIGHT_BLOCK)) {
-                if (mutableInt.getValue() == 0) {
-                    cir.setReturnValue(0);
-                } else {
-                    cir.setReturnValue(Math.max(1, mutableInt.getValue()));
-                }
-                cir.cancel();
+        ChunkSkyLightProvider this_ = (ChunkSkyLightProvider) (Object) this;
+        BlockState sourceState = this.getStateForLighting(sourceId, null);
+        MutableInt mutableInt = new MutableInt();
+        BlockState targetState = this.getStateForLighting(targetId, mutableInt);
+        if (sourceState.isOf(SkylightMod.SKYLIGHT_BLOCK)) {
+            if (mutableInt.getValue() == 0) {
+                cir.setReturnValue(0);
+            } else {
+                cir.setReturnValue(Math.max(1, mutableInt.getValue()));
             }
+            cir.cancel();
         }
     }
 }
